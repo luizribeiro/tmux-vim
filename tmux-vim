@@ -7,7 +7,7 @@
 #
 # Usage:
 #
-#   tmux-vim [file [files...]]
+#   tmux-vim <vim command> [file [files...]]
 #
 # Configuration:
 #
@@ -328,7 +328,7 @@ tmux_vim() {
 
     _pre_flight_checks || exit 1
 
-    if ( ! _vim_start "$@" ) && [[ $# -gt 0 ]]; then
+    if ( ! _vim_start "${@:2}" ) && [[ $# -gt 0 ]]; then
 
         _vim_send_keys escape  # make sure we're in command mode
 
@@ -338,23 +338,7 @@ tmux_vim() {
         local vim_cwd=$( _vim_cwd )
         [[ "$PWD" != "$vim_cwd" ]] && _vim_op cd "$PWD"
 
-        # Rather than :edit each file in turn, use :badd for all but the last
-        # file, and then use :edit on that.
-        # This is to handle the situation where the current buffer is unsaved,
-        # and an :edit command will cause vim to prompt the user to save,
-        # abandon or cancel.
-        # If we just :edit each file, things just don't work out naturally;
-        # cancel works, but yes/no end up with only the first file opened.
-        # Errant escape keys cause the whole open to just silently fail.
-        # This approach pushes the user interaction right to the end.
-        while [[ $# -gt 1 ]]; do
-            _vim_op badd "$1"
-            shift
-        done
-
-        _vim_op edit "$1"
-
-        [[ "$PWD" != "$vim_cwd" ]] && _vim_op cd -
+        _vim_op $1 "$2"
     fi
 
     $tmux select-pane -t $( _vim_pane_id )
